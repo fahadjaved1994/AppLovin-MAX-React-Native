@@ -305,10 +305,21 @@
     nativeAdInfo[@"callToAction"] = ad.callToAction;
     nativeAdInfo[@"starRating"] = ad.starRating;
     
-    // The aspect ratio can be 0.0f when it is not provided by the network.
-    if ( ad.mediaContentAspectRatio > 0 )
+    if ( !isnan(ad.mediaContentAspectRatio) )
     {
-        nativeAdInfo[@"mediaContentAspectRatio"] = @(ad.mediaContentAspectRatio);
+        // The aspect ratio can be 0.0f when it is not provided by the network.
+        if ( fabs(ad.mediaContentAspectRatio) < FLT_EPSILON )
+        {
+            nativeAdInfo[@"mediaContentAspectRatio"] = @(1.0);
+        }
+        else
+        {
+            nativeAdInfo[@"mediaContentAspectRatio"] = @(ad.mediaContentAspectRatio);
+        }
+    }
+    else
+    {
+        nativeAdInfo[@"mediaContentAspectRatio"] = @(1.0);
     }
     
     nativeAdInfo[@"isIconImageAvailable"] = @(ad.icon != nil);

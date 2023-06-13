@@ -4,7 +4,6 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 
 import com.applovin.mediation.MaxAd;
@@ -33,15 +32,8 @@ import static com.applovin.sdk.AppLovinSdkUtils.runOnUiThreadDelayed;
 
 public class AppLovinMAXNativeAdView
         extends ReactViewGroup
-        implements MaxAdRevenueListener, View.OnLayoutChangeListener, ViewGroup.OnHierarchyChangeListener
+        implements MaxAdRevenueListener, View.OnLayoutChangeListener
 {
-    private static final int TITLE_LABEL_TAG          = 1;
-    private static final int MEDIA_VIEW_CONTAINER_TAG = 2;
-    private static final int ICON_VIEW_TAG            = 3;
-    private static final int BODY_VIEW_TAG            = 4;
-    private static final int CALL_TO_ACTION_VIEW_TAG  = 5;
-    private static final int ADVERTISER_VIEW_TAG      = 8;
-
     private final ReactContext      reactContext;
     @Nullable
     private       MaxNativeAdLoader adLoader;
@@ -155,7 +147,7 @@ public class AppLovinMAXNativeAdView
             {
                 for ( Map.Entry<String, Object> entry : localExtraParameters.entrySet() )
                 {
-                    adLoader.setLocalExtraParameter( entry.getKey(), entry.getValue() );
+                    adLoader.setLocalExtraParameter( entry.getKey(), (String) entry.getValue() );
                 }
             }
 
@@ -181,7 +173,7 @@ public class AppLovinMAXNativeAdView
         }
 
         view.setClickable( true );
-        view.setTag( TITLE_LABEL_TAG );
+
         clickableViews.add( view );
     }
 
@@ -197,7 +189,7 @@ public class AppLovinMAXNativeAdView
         }
 
         view.setClickable( true );
-        view.setTag( ADVERTISER_VIEW_TAG );
+
         clickableViews.add( view );
     }
 
@@ -213,7 +205,7 @@ public class AppLovinMAXNativeAdView
         }
 
         view.setClickable( true );
-        view.setTag( BODY_VIEW_TAG );
+
         clickableViews.add( view );
     }
 
@@ -230,22 +222,7 @@ public class AppLovinMAXNativeAdView
 
         view.setClickable( true );
 
-        // Some adapters, like Google, expect a Button widget for CTA to be clickable
-        if ( view instanceof ViewGroup )
-        {
-            Button button = new Button( reactContext );
-            button.setAlpha( 0 );
-            ( (ViewGroup) view ).addView( button );
-            sizeToFit( button, view );
-
-            button.setTag( CALL_TO_ACTION_VIEW_TAG );
-            clickableViews.add( button );
-        }
-        else
-        {
-            view.setTag( CALL_TO_ACTION_VIEW_TAG );
-            clickableViews.add( view );
-        }
+        clickableViews.add( view );
     }
 
     public void setIconView(final int tag)
@@ -258,7 +235,6 @@ public class AppLovinMAXNativeAdView
         }
 
         view.setClickable( true );
-        view.setTag( ICON_VIEW_TAG );
         clickableViews.add( view );
 
         MaxNativeAdImage icon = nativeAd.getNativeAd().getIcon();
@@ -302,21 +278,12 @@ public class AppLovinMAXNativeAdView
             return;
         }
 
-        view.setTag( MEDIA_VIEW_CONTAINER_TAG );
         clickableViews.add( view );
 
         view.addOnLayoutChangeListener( this );
         view.addView( mediaView );
 
         sizeToFit( mediaView, view );
-
-        // Resize the child of `mediaView` for the networks, especially for InMobi, where the actual
-        // media view is added in `MaxNativeAdLoader.b()` after `mediaView` is sized so that it has
-        // to be resized when the network's media view is added.
-        if ( mediaView instanceof ViewGroup )
-        {
-            ( (ViewGroup) mediaView ).setOnHierarchyChangeListener( this );
-        }
     }
 
     @Override
@@ -332,16 +299,7 @@ public class AppLovinMAXNativeAdView
         }
     }
 
-    @Override
-    public void onChildViewAdded(final View parent, final View child)
-    {
-        parent.post( () -> sizeToFit( child, parent ) );
-    }
-
-    @Override
-    public void onChildViewRemoved(final View parent, final View child) { }
-
-    private static void sizeToFit(final @Nullable View view, final View parentView)
+    private void sizeToFit(final @Nullable View view, final View parentView)
     {
         if ( view != null )
         {
@@ -399,13 +357,6 @@ public class AppLovinMAXNativeAdView
                     adLoader.b( ad );
                 }
 
-                // Reassure the size of `mediaView` and its children for the networks, such as
-                // LINE, where the actual ad contents are loaded after `mediaView` is sized.
-                if ( mediaView != null && mediaView.getParent() != null )
-                {
-                    sizeToFit( mediaView, (View) mediaView.getParent() );
-                }
-
                 isLoading.set( false );
             }, 500L );
         }
@@ -445,11 +396,22 @@ public class AppLovinMAXNativeAdView
             nativeAdInfo.putDouble( "starRating", ad.getStarRating().doubleValue() );
         }
 
-        // The aspect ratio can be 0.0f when it is not provided by the network.
         float aspectRatio = ad.getMediaContentAspectRatio();
-        if ( aspectRatio > 0 )
+        if ( !Float.isNaN( aspectRatio ) )
         {
-            nativeAdInfo.putDouble( "mediaContentAspectRatio", aspectRatio );
+            // The aspect ratio can be 0.0f when it is not provided by the network.
+            if ( Math.signum( aspectRatio ) == 0 )
+            {
+                nativeAdInfo.putDouble( "mediaContentAspectRatio", 1.0 );
+            }
+            else
+            {
+                nativeAdInfo.putDouble( "mediaContentAspectRatio", aspectRatio );
+            }
+        }
+        else
+        {
+            nativeAdInfo.putDouble( "mediaContentAspectRatio", 1.0 );
         }
 
         nativeAdInfo.putBoolean( "isIconImageAvailable", ( ad.getIcon() != null ) );

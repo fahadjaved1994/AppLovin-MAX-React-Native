@@ -1,17 +1,7 @@
 ## Versions
 
-## 5.5.2
-* Fix NPE in NativeAdView when it's closed before shown. (https://github.com/AppLovin/AppLovin-MAX-React-Native/issues/224)
-## 5.5.1
-* Depend on Android SDK 11.10.1 and iOS SDK 11.10.1.
-## 5.5.0
-* Depend on Android SDK 11.10.0 and iOS SDK 11.10.0.
-## 5.4.0
-* Add support for Google native ads on Android, starting with adapter version v22.1.0.1 and up.
-* Fix InMobi media view not showing due to lack of sizing.
-## 5.3.0
-* Remove the default media view aspect ratio of `1.0` when a mediated network does not provide it.
-* Fix LINE media view not showing.
+## x.x.x
+* Add support for Expo config.
 * Fix IconView not being displayed when setting it up with an empty DOM node.
 ## 5.2.3
 * Fix banner/MREC crashes related to previous release.
